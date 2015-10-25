@@ -73,13 +73,17 @@ class Table:
 
   def _detect_wall_collision(self):
     for i, ball in enumerate(self.balls):
-      if self.length / 2 - ball.s[0] < ball.radius and ball.s[2] > 0:
+      if abs(self.length / 2 - ball.s[0]) < ball.radius and ball.s[2] > 0:
+        print 'colliding right', ball.s
         ball.s[2] = -ball.s[2]
-      if -self.length / 2 - ball.s[0] < ball.radius and ball.s[2] < 0:
+      if abs(-self.length / 2 - ball.s[0]) < ball.radius and ball.s[2] < 0:
+        print 'colliding left', ball.s
         ball.s[2] = -ball.s[2]
-      if self.width / 2 - ball.s[1] < ball.radius and ball.s[1] > 0:
+      if abs(self.width / 2 - ball.s[1]) < ball.radius and ball.s[3] > 0:
+        print 'colliding top', ball.s
         ball.s[3] = -ball.s[3]
-      if -self.width / 2 - ball.s[1] < ball.radius and ball.s[1] < 0:
+      if abs(-self.width / 2 - ball.s[1]) < ball.radius and ball.s[3] < 0:
+        print 'colliding bottom', ball.s
         ball.s[3] = -ball.s[3]
 
   def _detect_ball_collision(self):
