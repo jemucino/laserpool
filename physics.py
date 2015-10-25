@@ -51,9 +51,8 @@ class Ball:
 
 class Table:
 
-  def __init__(self, num_balls):
+  def __init__(self, num_balls=16, ball_coordinates=[], cue_stick={}):
     '''Define the state of the pool table'''
-    self.balls = range(num_balls)
     self.next_ball = 0
 
     self.length = 2.235
@@ -61,24 +60,40 @@ class Table:
 
     self.t = 0
 
-    for _, i in enumerate(self.balls):
-      while True:
-        ball_data = self._initialize_ball(i)
-        collision = False
-        for second_ball in self.balls[:i]:
-          distance = math.sqrt((ball_data['state'][0]-second_ball.s[0])**2 + (ball_data['state'][1]-second_ball.s[1])**2)
-          if distance <= 2*second_ball.radius:
-            collision = True
-        if not collision:
-          break
-      self.balls[i] = Ball(**ball_data)
+    if not ball_coordinates:
+      self.balls = range(num_balls)
+      for i, _ in enumerate(self.balls):
+        while True:
+          ball_data = self._initialize_ball(i)
+          collision = False
+          for second_ball in self.balls[:i]:
+            distance = math.sqrt((ball_data['state'][0]-second_ball.s[0])**2 + (ball_data['state'][1]-second_ball.s[1])**2)
+            if distance <= 2*second_ball.radius:
+              collision = True
+          if not collision:
+            break
+        self.balls[i] = Ball(**ball_data)
+    else:
+      self.balls = ball_coordinates
+      for i, coordinates in enumerate(ball_coordinates):
+        ball_data = self._initialize_ball(i, coordinates)
+        self.balls[i] = Ball(**ball_data)
+        for first_ball in self.balls[:i]:
+          print self.balls[i].s
+          distance = math.sqrt((first_ball.s[0]-self.balls[i].s[0])**2 + (first_ball.s[1]-self.balls[i].s[1])**2)
+          if distance <= 2*first_ball.radius:
+            self._prevent_ball_overlap(first_ball, self.balls[i])
 
-  def _initialize_ball(self, number):
-    x = -self.length/2 if not number else random.uniform(-self.length/2, self.length/2)
-    y = -self.width/2 if not number else random.uniform(-self.width/2, self.width/2)
-    u = 2 if not number else 0
-    v = 2 if not number else 0
-    state = [x,y,u,v]
+  def _initialize_ball(self, number, coordinates=None):
+    if not coordinates:
+      x = -self.length/2 if not number else random.uniform(-self.length/2, self.length/2)
+      y = -self.width/2 if not number else random.uniform(-self.width/2, self.width/2)
+      u = 1.5 if not number else 0
+      v = 1.5 if not number else 0
+      state = [x,y,u,v]
+    else:
+      state = coordinates
+
     color = colors[number]
     return {'number': number, 'state': state, 'color': color}
 
@@ -114,6 +129,19 @@ class Table:
     first_ball.s = first_state
     second_ball.s = second_state
 
+  def _prevent_ball_overlap(self, first_ball, second_ball):
+    # calculate minimum recoil distance
+    delta_position = np.array([first_ball.s[0]-second_ball.s[0], first_ball.s[1]-second_ball.s[1]])
+    distance = np.linalg.norm(delta_position)
+    min_recoil = delta_position/distance*(2*first_ball.radius-distance)
+
+    # move balls by minimum recoil distance
+    position1 = np.array([first_ball.s[0], first_ball.s[1]]) + 1/2*min_recoil
+    position2 = np.array([second_ball.s[0], second_ball.s[1]]) - 1/2*min_recoil
+
+    first_ball.s[0:2] = position1
+    second_ball.s[0:2] = position2
+
   def simulate_collision(self, first_ball, second_ball):
     # calculate minimum recoil distance
     delta_position = np.array([first_ball.s[0]-second_ball.s[0], first_ball.s[1]-second_ball.s[1]])
@@ -129,11 +157,11 @@ class Table:
     velocity1 = np.array(first_ball.s[2:4]) - 1/2*np.dot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))*min_recoil/np.linalg.norm(min_recoil)
     velocity2 = np.array(second_ball.s[2:4]) + 1/2*np.dot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))*min_recoil/np.linalg.norm(min_recoil)
 
-    print delta_velocity, min_recoil/np.linalg.norm(min_recoil)
-    print 1/2*np.dot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
-    print 1/2*np.vdot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
-    print position1, velocity1
-    print position2, velocity2
+#     print delta_velocity, min_recoil/np.linalg.norm(min_recoil)
+#     print 1/2*np.dot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
+#     print 1/2*np.vdot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
+#     print position1, velocity1
+#     print position2, velocity2
 
     return (np.concatenate([position1, velocity1]), np.concatenate([position2, velocity2]))
 
@@ -162,5 +190,17 @@ if __name__ == '__main__':
     seed = int(sys.argv[1])
   print 'SEED', seed
   random.seed(seed)
-  table = Table(16)
+
+  length = 2.235
+  width = 1.143
+
+  coordinates = range(10)
+  for i, coodinate in enumerate(coordinates):
+      x = -length/2 if not i else random.uniform(-length/2, length/2)
+      y = -width/2 if not i else random.uniform(-width/2, width/2)
+      u = 1.5 if not i else 0
+      v = 1.5 if not i else 0
+      coordinates[i] = (x,y,u,v)
+
+  table = Table(ball_coordinates=coordinates)
   table.propagate_state()
