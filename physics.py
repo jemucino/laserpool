@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 g = 9.81
 friction = 0.28
 
-colors = ['white', 'yellow', 'blue', 'red', 'purple', 'orange', 'green', 'brown',
+colors = ['black', 'yellow', 'blue', 'red', 'purple', 'orange', 'green', 'brown',
           'black', 'lightyellow', 'lightblue', 'pink', 'fuchsia', 'salmon', 'lightgreen', 'maroon']
 
 class Ball:
@@ -62,7 +62,11 @@ class Table:
 
   def _initialize_ball(self):
     number = self.next_ball
-    state = [random.uniform(-self.length/2, self.length/2), random.uniform(-self.width/2, self.width/2), random.uniform(-1,1), random.uniform(-1,1)]
+    x = -self.length/2 if not number else random.uniform(-self.length/2, self.length/2)
+    y = -self.width/2 if not number else random.uniform(-self.width/2, self.width/2)
+    u = 1 if not number else 0
+    v = 1 if not number else 0
+    state = [x,y,u,v]
     color = colors[number]
     self.next_ball += 1
     return {'number': number, 'state': state, 'color': color}
@@ -80,11 +84,12 @@ class Table:
     first_ball.s = first_state
     second_ball.s = second_state
 
-  def simulate_collision(self, first_ball, second_ball,):
+  def simulate_collision(self, first_ball, second_ball):
     # calculate minimum recoil distance
     delta_position = np.array([first_ball.s[0]-second_ball.s[0], first_ball.s[1]-second_ball.s[1]])
     distance = np.linalg.norm(delta_position)
     min_recoil = delta_position*(2*first_ball.radius-distance)/distance
+#     min_recoil =
 
     # move balls by minimum recoil distance
     position1 = np.array([first_ball.s[0], first_ball.s[1]]) + 1/2*min_recoil
@@ -95,19 +100,25 @@ class Table:
     velocity1 = np.array(first_ball.s[2:4]) - 1/2*np.dot(delta_velocity, np.linalg.norm(min_recoil))
     velocity2 = np.array(second_ball.s[2:4]) + 1/2*np.dot(delta_velocity, np.linalg.norm(min_recoil))
 
+    velocity1 = [0, -2]
+    velocity2 = [0, 2]
+
     print position1, velocity1
     print position2, velocity2
 
     return (np.concatenate([position1, velocity1]), np.concatenate([position2, velocity2]))
 
-  def propagate_state(self, timestep = 1e-1):
-    for i in range(100):
+  def propagate_state(self, timestep = 5e-2):
+    for i in range(500):
       fig = plt.figure(1)
-      fig.gca().add_artist(plt.Rectangle((-self.length/2, -self.width/2),self.length,self.width,color='lightgreen',alpha=0.1))
+      fig.gca().add_artist(plt.Rectangle((-self.length/2, -self.width/2),self.length,self.width,color='lightgreen',alpha=0.01))
       for ball in self.balls:
         ball.propagate_state(timestep)
 #         print ball.number, ': ', ball.s
-        fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5))
+        if ball.number:
+          fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5))
+        else:
+          fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5,fill=0))
       self._detect_collision()
 
     plt.axis([-2, 2, -2, 2])
