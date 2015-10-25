@@ -6,6 +6,7 @@ import random
 
 import numpy as np
 from scipy.integrate import odeint
+from matplotlib import lines
 import matplotlib.pyplot as plt
 
 
@@ -91,22 +92,30 @@ class Table:
     for i, ball in enumerate(self.balls):
       if abs(self.length / 2 - ball.s[0]) < ball.radius and ball.s[2] > 0:
         print 'colliding right', ball.s
+        self.ball_vectors[i].append(ball.s[:2])
         ball.s[2] = -ball.s[2]
       if abs(-self.length / 2 - ball.s[0]) < ball.radius and ball.s[2] < 0:
         print 'colliding left', ball.s
+        self.ball_vectors[i].append(ball.s[:2])
         ball.s[2] = -ball.s[2]
       if abs(self.width / 2 - ball.s[1]) < ball.radius and ball.s[3] > 0:
         print 'colliding top', ball.s
+        self.ball_vectors[i].append(ball.s[:2])
         ball.s[3] = -ball.s[3]
       if abs(-self.width / 2 - ball.s[1]) < ball.radius and ball.s[3] < 0:
         print 'colliding bottom', ball.s
+        self.ball_vectors[i].append(ball.s[:2])
         ball.s[3] = -ball.s[3]
 
   def _detect_ball_collision(self):
     for i, first_ball in enumerate(self.balls):
-      for second_ball in self.balls[i+1:]:
+      for j, second_ball in enumerate(self.balls[i+1:]):
         distance = math.sqrt((first_ball.s[0]-second_ball.s[0])**2 + (first_ball.s[1]-second_ball.s[1])**2)
         if distance <= 2*first_ball.radius:
+          if first_ball.s[2] > 0.01 or first_balls.s[3] > 0.01:
+            self.ball_vectors[i].append(first_ball.s[:2])
+          if second_ball.s[2] > 0.01 or second_ball.s[3] > 0.01:
+            self.ball_vectors[i+j+1].append(second_ball.s[:2])
           print 'collision ', first_ball.number, second_ball.number, ' at ', self.t
           new_states = self.simulate_collision(first_ball, second_ball)
           self._update_ball_state(first_ball, new_states[0], second_ball, new_states[1])
@@ -152,6 +161,7 @@ class Table:
     return (np.concatenate([position1, velocity1]), np.concatenate([position2, velocity2]))
 
   def propagate_state(self, timestep = 1e-2):
+    self.ball_vectors = [[b.s[:2]] for b in self.balls]
     for i in range(200):
       fig = plt.figure(1)
       fig.gca().add_artist(plt.Rectangle((-self.length/2, -self.width/2),self.length,self.width,color='lightgreen',alpha=0.01))
@@ -165,6 +175,12 @@ class Table:
           fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5,fill=0))
       self.t += timestep
       self._detect_collision()
+    for i, v in enumerate(self.ball_vectors):
+      if len(v) > 1:
+        v.append(self.balls[i].s[:2])
+      xs = [x for x, y in v]
+      ys = [y for x, y in v]
+      fig.gca().add_artist(lines.Line2D(xs, ys, color='black'))
 
     plt.axis([-2, 2, -2, 2])
     plt.show()
