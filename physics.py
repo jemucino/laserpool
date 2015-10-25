@@ -91,19 +91,19 @@ class Table:
   def _detect_wall_collision(self):
     for i, ball in enumerate(self.balls):
       if abs(self.length / 2 - ball.s[0]) < ball.radius and ball.s[2] > 0:
-        print 'colliding right', ball.s
+        # # print 'colliding right', ball.s
         self.ball_vectors[i].append(ball.s[:2])
         ball.s[2] = -ball.s[2]
       if abs(-self.length / 2 - ball.s[0]) < ball.radius and ball.s[2] < 0:
-        print 'colliding left', ball.s
+        # print 'colliding left', ball.s
         self.ball_vectors[i].append(ball.s[:2])
         ball.s[2] = -ball.s[2]
       if abs(self.width / 2 - ball.s[1]) < ball.radius and ball.s[3] > 0:
-        print 'colliding top', ball.s
+        # print 'colliding top', ball.s
         self.ball_vectors[i].append(ball.s[:2])
         ball.s[3] = -ball.s[3]
       if abs(-self.width / 2 - ball.s[1]) < ball.radius and ball.s[3] < 0:
-        print 'colliding bottom', ball.s
+        # print 'colliding bottom', ball.s
         self.ball_vectors[i].append(ball.s[:2])
         ball.s[3] = -ball.s[3]
 
@@ -112,11 +112,11 @@ class Table:
       for j, second_ball in enumerate(self.balls[i+1:]):
         distance = math.sqrt((first_ball.s[0]-second_ball.s[0])**2 + (first_ball.s[1]-second_ball.s[1])**2)
         if distance <= 2*first_ball.radius:
-          if first_ball.s[2] > 0.01 or first_balls.s[3] > 0.01:
+          if first_ball.s[2] > 0.01 or first_ball.s[3] > 0.01:
             self.ball_vectors[i].append(first_ball.s[:2])
           if second_ball.s[2] > 0.01 or second_ball.s[3] > 0.01:
             self.ball_vectors[i+j+1].append(second_ball.s[:2])
-          print 'collision ', first_ball.number, second_ball.number, ' at ', self.t
+          # print 'collision ', first_ball.number, second_ball.number, ' at ', self.t
           new_states = self.simulate_collision(first_ball, second_ball)
           self._update_ball_state(first_ball, new_states[0], second_ball, new_states[1])
 
@@ -152,27 +152,27 @@ class Table:
     velocity1 = np.array(first_ball.s[2:4]) - 1/2*np.dot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))*min_recoil/np.linalg.norm(min_recoil)
     velocity2 = np.array(second_ball.s[2:4]) + 1/2*np.dot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))*min_recoil/np.linalg.norm(min_recoil)
 
-#     print delta_velocity, min_recoil/np.linalg.norm(min_recoil)
-#     print 1/2*np.dot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
-#     print 1/2*np.vdot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
-#     print position1, velocity1
-#     print position2, velocity2
+#     # print delta_velocity, min_recoil/np.linalg.norm(min_recoil)
+#     # print 1/2*np.dot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
+#     # print 1/2*np.vdot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
+#     # print position1, velocity1
+#     # print position2, velocity2
 
     return (np.concatenate([position1, velocity1]), np.concatenate([position2, velocity2]))
 
   def propagate_state(self, timestep = 1e-2, plot=False):
     self.ball_vectors = [[b.s[:2]] for b in self.balls]
-    for i in range(200):
+    for i in range(100):
       if plot:
         fig = plt.figure(1)
         fig.gca().add_artist(plt.Rectangle((-self.length/2, -self.width/2),self.length,self.width,color='lightgreen',alpha=0.01))
       for ball in self.balls:
         ball.propagate_state(timestep)
-#         print ball.number, ': ', ball.s
+#         # print ball.number, ': ', ball.s
         if plot and ball.number and i%5 == 0:
           fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5))
         elif plot and i%5 == 0:
-#           print ball.s
+#           # print ball.s
           fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5,fill=0))
       self.t += timestep
       self._detect_collision()
@@ -207,6 +207,6 @@ if __name__ == '__main__':
     v = 1.5 if not i else 0
     coordinates[i] = (x,y,u,v)
 
-  table = Table(16)
+  table = Table(ball_coordinates=coordinates)
   table.propagate_state(plot=True)
 
