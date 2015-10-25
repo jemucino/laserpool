@@ -160,17 +160,18 @@ class Table:
 
     return (np.concatenate([position1, velocity1]), np.concatenate([position2, velocity2]))
 
-  def propagate_state(self, timestep = 1e-2):
+  def propagate_state(self, timestep = 1e-2, plot=False):
     self.ball_vectors = [[b.s[:2]] for b in self.balls]
     for i in range(200):
-      fig = plt.figure(1)
-      fig.gca().add_artist(plt.Rectangle((-self.length/2, -self.width/2),self.length,self.width,color='lightgreen',alpha=0.01))
+      if plot:
+        fig = plt.figure(1)
+        fig.gca().add_artist(plt.Rectangle((-self.length/2, -self.width/2),self.length,self.width,color='lightgreen',alpha=0.01))
       for ball in self.balls:
         ball.propagate_state(timestep)
 #         print ball.number, ': ', ball.s
-        if ball.number and i%5 == 0:
+        if plot and ball.number and i%5 == 0:
           fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5))
-        elif i%5 == 0:
+        elif plot and i%5 == 0:
 #           print ball.s
           fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5,fill=0))
       self.t += timestep
@@ -178,12 +179,14 @@ class Table:
     for i, v in enumerate(self.ball_vectors):
       if len(v) > 1:
         v.append(self.balls[i].s[:2])
-      xs = [x for x, y in v]
-      ys = [y for x, y in v]
-      fig.gca().add_artist(lines.Line2D(xs, ys, color='black'))
+      if plot:
+        xs = [x for x, y in v]
+        ys = [y for x, y in v]
+        fig.gca().add_artist(lines.Line2D(xs, ys, color='black'))
 
-    plt.axis([-2, 2, -2, 2])
-    plt.show()
+    if plot:
+      plt.axis([-2, 2, -2, 2])
+      plt.show()
 
 
 if __name__ == '__main__':
@@ -198,12 +201,12 @@ if __name__ == '__main__':
 
   coordinates = range(10)
   for i, coodinate in enumerate(coordinates):
-      x = -length/2 if not i else random.uniform(-length/2, length/2)
-      y = -width/2 if not i else random.uniform(-width/2, width/2)
-      u = 1.5 if not i else 0
-      v = 1.5 if not i else 0
-      coordinates[i] = (x,y,u,v)
+    x = -length/2 if not i else random.uniform(-length/2, length/2)
+    y = -width/2 if not i else random.uniform(-width/2, width/2)
+    u = 1.5 if not i else 0
+    v = 1.5 if not i else 0
+    coordinates[i] = (x,y,u,v)
 
-#   table = Table(ball_coordinates=coordinates)
   table = Table(16)
-  table.propagate_state()
+  table.propagate_state(plot=True)
+
