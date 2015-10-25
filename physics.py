@@ -50,6 +50,15 @@ class Ball:
     self.s = odeint(self.move, self.s, [0,timestep])[1]
 
 
+class CueStick:
+
+  def __init__(self, coordinates, force_vector):
+    self.x = coordinates[0]
+    self.y = coordinates[1]
+
+    self.force_vector = force_vector
+
+
 class Pocket:
 
   def __init__(self, coordinates):
@@ -60,7 +69,7 @@ class Pocket:
 
 class Table:
 
-  def __init__(self, num_balls=16, ball_coordinates=[], cue_stick={}):
+  def __init__(self, num_balls=16, ball_coordinates=[]):
     '''Define the state of the pool table'''
     self.next_ball = 0
 
@@ -95,10 +104,10 @@ class Table:
 
   def _initialize_ball(self, number, coordinates=None):
     if not coordinates:
-      x = -self.length/2 + .100 if not number else random.uniform(-self.length/2, self.length/2)
-      y = -self.width/2 + .100 if not number else random.uniform(-self.width/2, self.width/2)
-      u = 1.5 if not number else 0
-      v = 1.5 if not number else 0
+      x = random.uniform(-self.length/2, self.length/2)
+      y = random.uniform(-self.width/2, self.width/2)
+      u = 0
+      v = 0
       state = [x,y,u,v]
     else:
       state = coordinates
@@ -193,6 +202,17 @@ class Table:
 
     return (np.concatenate([position1, velocity1]), np.concatenate([position2, velocity2]))
 
+  def strike_ball(self, cue_stick):
+    nearest_ball = None
+    nearest_ball_distance = 10
+    for ball in self.balls:
+      distance = math.sqrt((ball.s[0]-cue_stick.x)**2 + (ball.s[1]-cue_stick.y)**2)
+      if distance < nearest_ball_distance:
+        nearest_ball = ball
+        nearest_ball_distance = distance
+
+    nearest_ball.s[2:4] = [1.5, 1.5]
+
   def propagate_state(self, timestep = 1e-2, plot=False):
     self.trajectories = [[ball.s[:2]] for ball in self.balls]
     for i in range(200):
@@ -247,15 +267,19 @@ if __name__ == '__main__':
 
   length = 2.235
   width = 1.143
+  radius = 0.026
 
   coordinates = range(16)
   for i, coodinate in enumerate(coordinates):
-    x = -length/2 + .100 if not i else random.uniform(-length/2, length/2)
-    y = -width/2 + .100 if not i else random.uniform(-width/2, width/2)
-    u = 1.5 if not i else 0
-    v = 1.5 if not i else 0
+    x = random.uniform(-length/2 + radius, length/2 - radius)
+    y = random.uniform(-width/2 + radius, width/2 - radius)
+    u = 0
+    v = 0
     coordinates[i] = [x,y,u,v]
 
-  table = Table(ball_coordinates=coordinates)
-#   table = Table(16)
+  cue_stick = CueStick([0,0], [1,1])
+
+#   table = Table(ball_coordinates=coordinates)
+  table = Table(16)
+  table.strike_ball(cue_stick)
   table.propagate_state(plot=True)
