@@ -1,3 +1,5 @@
+from __future__ import division
+
 import math
 import random
 
@@ -10,7 +12,7 @@ g = 9.81
 friction = 0.28
 
 colors = ['black', 'yellow', 'blue', 'red', 'purple', 'orange', 'green', 'brown',
-          'black', 'lightyellow', 'lightblue', 'pink', 'fuchsia', 'salmon', 'lightgreen', 'maroon']
+          'black', 'lightyellow', 'lightblue', 'pink', 'fuchsia', 'salmon', 'teal', 'maroon']
 
 class Ball:
 
@@ -56,6 +58,8 @@ class Table:
     self.length = 2.235
     self.width = 1.143
 
+    self.t = 0
+
     for _, i in enumerate(self.balls):
       ball_data = self._initialize_ball()
       self.balls[i] = Ball(**ball_data)
@@ -95,7 +99,7 @@ class Table:
       for second_ball in self.balls[i+1:]:
         distance = math.sqrt((first_ball.s[0]-second_ball.s[0])**2 + (first_ball.s[1]-second_ball.s[1])**2)
         if distance <= 2*first_ball.radius:
-          print 'collision: ', first_ball.number, second_ball.number
+          print 'collision ', first_ball.number, second_ball.number, ' at ', self.t
           new_states = self.simulate_collision(first_ball, second_ball)
           self._update_ball_state(first_ball, new_states[0], second_ball, new_states[1])
 
@@ -107,8 +111,7 @@ class Table:
     # calculate minimum recoil distance
     delta_position = np.array([first_ball.s[0]-second_ball.s[0], first_ball.s[1]-second_ball.s[1]])
     distance = np.linalg.norm(delta_position)
-    min_recoil = delta_position*(2*first_ball.radius-distance)/distance
-#     min_recoil =
+    min_recoil = delta_position/distance*(2*first_ball.radius-distance)
 
     # move balls by minimum recoil distance
     position1 = np.array([first_ball.s[0], first_ball.s[1]]) + 1/2*min_recoil
@@ -116,28 +119,27 @@ class Table:
 
     # impact speed
     delta_velocity = np.array([first_ball.s[2]-second_ball.s[2], first_ball.s[3]-second_ball.s[3]])
-    velocity1 = np.array(first_ball.s[2:4]) - 1/2*np.dot(delta_velocity, np.linalg.norm(min_recoil))
-    velocity2 = np.array(second_ball.s[2:4]) + 1/2*np.dot(delta_velocity, np.linalg.norm(min_recoil))
-
-    velocity1 = [0, -2]
-    velocity2 = [0, 2]
+    velocity1 = np.array(first_ball.s[2:4]) + 1/2*np.vdot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
+    velocity2 = np.array(second_ball.s[2:4]) - 1/2*np.vdot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
 
     print position1, velocity1
     print position2, velocity2
 
     return (np.concatenate([position1, velocity1]), np.concatenate([position2, velocity2]))
 
-  def propagate_state(self, timestep = 5e-2):
-    for i in range(500):
+  def propagate_state(self, timestep = 1e-3):
+    for i in range(2000):
       fig = plt.figure(1)
       fig.gca().add_artist(plt.Rectangle((-self.length/2, -self.width/2),self.length,self.width,color='lightgreen',alpha=0.01))
       for ball in self.balls:
         ball.propagate_state(timestep)
 #         print ball.number, ': ', ball.s
-        if ball.number:
+        if ball.number and i%100 == 0:
           fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5))
-        else:
+        elif i%100 == 0:
+#           print ball.s
           fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5,fill=0))
+      self.t += timestep
       self._detect_collision()
 
     plt.axis([-2, 2, -2, 2])
