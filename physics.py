@@ -60,29 +60,15 @@ class Table:
 
     self.t = 0
 
-    if not ball_coordinates:
-      self.balls = range(num_balls)
-      for i, _ in enumerate(self.balls):
-        while True:
-          ball_data = self._initialize_ball(i)
-          collision = False
-          for second_ball in self.balls[:i]:
-            distance = math.sqrt((ball_data['state'][0]-second_ball.s[0])**2 + (ball_data['state'][1]-second_ball.s[1])**2)
-            if distance <= 2*second_ball.radius:
-              collision = True
-          if not collision:
-            break
-        self.balls[i] = Ball(**ball_data)
-    else:
-      self.balls = ball_coordinates
-      for i, coordinates in enumerate(ball_coordinates):
-        ball_data = self._initialize_ball(i, coordinates)
-        self.balls[i] = Ball(**ball_data)
-        for first_ball in self.balls[:i]:
-          print self.balls[i].s
-          distance = math.sqrt((first_ball.s[0]-self.balls[i].s[0])**2 + (first_ball.s[1]-self.balls[i].s[1])**2)
-          if distance <= 2*first_ball.radius:
-            self._prevent_ball_overlap(first_ball, self.balls[i])
+    self.balls = ball_coordinates if ball_coordinates else range(num_balls)
+    for i, coordinates in enumerate(self.balls):
+      ball_data = self._initialize_ball(i, coordinates) if ball_coordinates else self._initialize_ball(i)
+      second_ball = Ball(**ball_data)
+      for first_ball in self.balls[:i]:
+        distance = math.sqrt((first_ball.s[0]-second_ball.s[0])**2 + (first_ball.s[1]-second_ball.s[1])**2)
+        if distance <= 2*first_ball.radius:
+          self._prevent_ball_overlap(first_ball, second_ball)
+      self.balls[i] = second_ball
 
   def _initialize_ball(self, number, coordinates=None):
     if not coordinates:
@@ -202,5 +188,6 @@ if __name__ == '__main__':
       v = 1.5 if not i else 0
       coordinates[i] = (x,y,u,v)
 
-  table = Table(ball_coordinates=coordinates)
+#   table = Table(ball_coordinates=coordinates)
+  table = Table(16)
   table.propagate_state()
