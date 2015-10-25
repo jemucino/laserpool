@@ -69,8 +69,8 @@ class Table:
     number = self.next_ball
     x = -self.length/2 if not number else random.uniform(-self.length/2, self.length/2)
     y = -self.width/2 if not number else random.uniform(-self.width/2, self.width/2)
-    u = 1 if not number else 0
-    v = 1 if not number else 0
+    u = 2 if not number else 0
+    v = 2 if not number else 0
     state = [x,y,u,v]
     color = colors[number]
     self.next_ball += 1
@@ -120,24 +120,27 @@ class Table:
 
     # impact speed
     delta_velocity = np.array([first_ball.s[2]-second_ball.s[2], first_ball.s[3]-second_ball.s[3]])
-    velocity1 = np.array(first_ball.s[2:4]) + 1/2*np.vdot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
-    velocity2 = np.array(second_ball.s[2:4]) - 1/2*np.vdot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
+    velocity1 = np.array(first_ball.s[2:4]) - 1/2*np.dot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))*min_recoil/np.linalg.norm(min_recoil)
+    velocity2 = np.array(second_ball.s[2:4]) + 1/2*np.dot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))*min_recoil/np.linalg.norm(min_recoil)
 
+    print delta_velocity, min_recoil/np.linalg.norm(min_recoil)
+    print 1/2*np.dot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
+    print 1/2*np.vdot(delta_velocity, min_recoil/np.linalg.norm(min_recoil))
     print position1, velocity1
     print position2, velocity2
 
     return (np.concatenate([position1, velocity1]), np.concatenate([position2, velocity2]))
 
-  def propagate_state(self, timestep = 1e-3):
-    for i in range(2000):
+  def propagate_state(self, timestep = 1e-2):
+    for i in range(200):
       fig = plt.figure(1)
       fig.gca().add_artist(plt.Rectangle((-self.length/2, -self.width/2),self.length,self.width,color='lightgreen',alpha=0.01))
       for ball in self.balls:
         ball.propagate_state(timestep)
 #         print ball.number, ': ', ball.s
-        if ball.number and i%100 == 0:
+        if ball.number and i%5 == 0:
           fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5))
-        elif i%100 == 0:
+        elif i%5 == 0:
 #           print ball.s
           fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5,fill=0))
       self.t += timestep
