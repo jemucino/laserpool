@@ -1,3 +1,4 @@
+import sys
 import math
 import random
 
@@ -134,5 +135,10 @@ class Table:
 
 
 if __name__ == '__main__':
+  seed = random.randint(0, 10000000)
+  if len(sys.argv) > 1:
+    seed = int(sys.argv[1])
+  print 'SEED', seed
+  random.seed(seed)
   table = Table(16)
   table.propagate_state()
