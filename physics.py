@@ -68,6 +68,21 @@ class Table:
     return {'number': number, 'state': state, 'color': color}
 
   def _detect_collision(self):
+    self._detect_wall_collision()
+    self._detect_ball_collision()
+
+  def _detect_wall_collision(self):
+    for i, ball in enumerate(self.balls):
+      if self.length / 2 - ball.s[0] < ball.radius and ball.s[2] > 0:
+        ball.s[2] = -ball.s[2]
+      if -self.length / 2 - ball.s[0] < ball.radius and ball.s[2] < 0:
+        ball.s[2] = -ball.s[2]
+      if self.width / 2 - ball.s[1] < ball.radius and ball.s[1] > 0:
+        ball.s[3] = -ball.s[3]
+      if -self.width / 2 - ball.s[1] < ball.radius and ball.s[1] < 0:
+        ball.s[3] = -ball.s[3]
+
+  def _detect_ball_collision(self):
     for i, first_ball in enumerate(self.balls):
       for second_ball in self.balls[i+1:]:
         distance = math.sqrt((first_ball.s[0]-second_ball.s[0])**2 + (first_ball.s[1]-second_ball.s[1])**2)
@@ -80,7 +95,7 @@ class Table:
     first_ball.s = first_state
     second_ball.s = second_state
 
-  def simulate_collision(self, first_ball, second_ball,):
+  def simulate_collision(self, first_ball, second_ball):
     # calculate minimum recoil distance
     delta_position = np.array([first_ball.s[0]-second_ball.s[0], first_ball.s[1]-second_ball.s[1]])
     distance = np.linalg.norm(delta_position)
