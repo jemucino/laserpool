@@ -62,18 +62,24 @@ class Table:
     self.t = 0
 
     for _, i in enumerate(self.balls):
-      ball_data = self._initialize_ball()
+      while True:
+        ball_data = self._initialize_ball(i)
+        collision = False
+        for second_ball in self.balls[:i]:
+          distance = math.sqrt((ball_data['state'][0]-second_ball.s[0])**2 + (ball_data['state'][1]-second_ball.s[1])**2)
+          if distance <= 2*second_ball.radius:
+            collision = True
+        if not collision:
+          break
       self.balls[i] = Ball(**ball_data)
 
-  def _initialize_ball(self):
-    number = self.next_ball
+  def _initialize_ball(self, number):
     x = -self.length/2 if not number else random.uniform(-self.length/2, self.length/2)
     y = -self.width/2 if not number else random.uniform(-self.width/2, self.width/2)
     u = 1 if not number else 0
     v = 1 if not number else 0
     state = [x,y,u,v]
     color = colors[number]
-    self.next_ball += 1
     return {'number': number, 'state': state, 'color': color}
 
   def _detect_collision(self):
