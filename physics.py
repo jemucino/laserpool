@@ -49,6 +49,14 @@ class Ball:
     self.s = odeint(self.move, self.s, [0,timestep])[1]
 
 
+class Pocket:
+
+  def __init__(self, coordinates):
+    self.x = coordinates[0]
+    self.y = coordinates[1]
+    self.radius = 0.050
+
+
 class Table:
 
   def __init__(self, num_balls=16, ball_coordinates=[], cue_stick={}):
@@ -60,6 +68,16 @@ class Table:
 
     self.t = 0
 
+    self.pockets = [(-self.length/2, -self.width/2),
+                    (-self.length/2, self.width/2),
+                    (self.length/2, -self.width/2),
+                    (self.length/2, self.width/2),
+                    (0, -self.width/2),
+                    (0, self.width/2),
+                   ]
+    for i, coordinates in enumerate(self.pockets):
+      self.pockets[i] = Pocket(coordinates)
+
     self.balls = ball_coordinates if ball_coordinates else range(num_balls)
     for i, coordinates in enumerate(self.balls):
       ball_data = self._initialize_ball(i, coordinates) if ball_coordinates else self._initialize_ball(i)
@@ -68,12 +86,13 @@ class Table:
         distance = math.sqrt((first_ball.s[0]-second_ball.s[0])**2 + (first_ball.s[1]-second_ball.s[1])**2)
         if distance <= 2*first_ball.radius:
           self._prevent_ball_overlap(first_ball, second_ball)
+        self._prevent_ball_out_of_bounds(second_ball)
       self.balls[i] = second_ball
 
   def _initialize_ball(self, number, coordinates=None):
     if not coordinates:
-      x = -self.length/2 if not number else random.uniform(-self.length/2, self.length/2)
-      y = -self.width/2 if not number else random.uniform(-self.width/2, self.width/2)
+      x = -self.length/2 + .100 if not number else random.uniform(-self.length/2, self.length/2)
+      y = -self.width/2 + .100 if not number else random.uniform(-self.width/2, self.width/2)
       u = 1.5 if not number else 0
       v = 1.5 if not number else 0
       state = [x,y,u,v]
@@ -88,7 +107,13 @@ class Table:
     self._detect_ball_collision()
 
   def _detect_wall_collision(self):
-    for i, ball in enumerate(self.balls):
+    for ball in self.balls:
+      # stop ball if in pocket
+      for pocket in self.pockets:
+        if math.sqrt((ball.s[0]-pocket.x)**2 + (ball.s[1]-pocket.y)**2) < pocket.radius:
+          ball.s = [pocket.x, pocket.y, 0, 0]
+          return
+
       if abs(self.length / 2 - ball.s[0]) < ball.radius and ball.s[2] > 0:
         print 'colliding right', ball.s
         ball.s[2] = -ball.s[2]
@@ -128,6 +153,17 @@ class Table:
     first_ball.s[0:2] = position1
     second_ball.s[0:2] = position2
 
+  def _prevent_ball_out_of_bounds(self, ball):
+    if ball.s[0] - ball.radius < -1/2*self.length:
+      ball.s[0] += -1/2*self.length - (ball.s[0] - ball.radius)
+    elif ball.s[0] + ball.radius > 1/2*self.length:
+      ball.s[0] += 1/2*self.length - (ball.s[0] + ball.radius)
+
+    if ball.s[1] - ball.radius < -1/2*self.width:
+      ball.s[1] += -1/2*self.width - (ball.s[1] - ball.radius)
+    elif ball.s[1] + ball.radius > 1/2*self.width:
+      ball.s[1] += 1/2*self.width - (ball.s[1] + ball.radius)
+
   def simulate_collision(self, first_ball, second_ball):
     # calculate minimum recoil distance
     delta_position = np.array([first_ball.s[0]-second_ball.s[0], first_ball.s[1]-second_ball.s[1]])
@@ -155,13 +191,13 @@ class Table:
     for i in range(200):
       fig = plt.figure(1)
       fig.gca().add_artist(plt.Rectangle((-self.length/2, -self.width/2),self.length,self.width,color='lightgreen',alpha=0.01))
+      for pocket in self.pockets:
+        fig.gca().add_artist(plt.Circle((pocket.x, pocket.y),pocket.radius,color='gray',alpha=0.01))
       for ball in self.balls:
         ball.propagate_state(timestep)
-#         print ball.number, ': ', ball.s
         if ball.number and i%5 == 0:
           fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5))
         elif i%5 == 0:
-#           print ball.s
           fig.gca().add_artist(plt.Circle((ball.s[0],ball.s[1]),ball.radius,color=ball.color,alpha=0.5,fill=0))
       self.t += timestep
       self._detect_collision()
@@ -182,8 +218,8 @@ if __name__ == '__main__':
 
   coordinates = range(10)
   for i, coodinate in enumerate(coordinates):
-      x = -length/2 if not i else random.uniform(-length/2, length/2)
-      y = -width/2 if not i else random.uniform(-width/2, width/2)
+      x = -length/2 + .100 if not i else random.uniform(-length/2, length/2)
+      y = -width/2 + .100 if not i else random.uniform(-width/2, width/2)
       u = 1.5 if not i else 0
       v = 1.5 if not i else 0
       coordinates[i] = (x,y,u,v)
