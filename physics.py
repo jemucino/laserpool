@@ -72,6 +72,25 @@ class Table:
     return {'number': number, 'state': state, 'color': color}
 
   def _detect_collision(self):
+    self._detect_wall_collision()
+    self._detect_ball_collision()
+
+  def _detect_wall_collision(self):
+    for i, ball in enumerate(self.balls):
+      if abs(self.length / 2 - ball.s[0]) < ball.radius and ball.s[2] > 0:
+        print 'colliding right', ball.s
+        ball.s[2] = -ball.s[2]
+      if abs(-self.length / 2 - ball.s[0]) < ball.radius and ball.s[2] < 0:
+        print 'colliding left', ball.s
+        ball.s[2] = -ball.s[2]
+      if abs(self.width / 2 - ball.s[1]) < ball.radius and ball.s[3] > 0:
+        print 'colliding top', ball.s
+        ball.s[3] = -ball.s[3]
+      if abs(-self.width / 2 - ball.s[1]) < ball.radius and ball.s[3] < 0:
+        print 'colliding bottom', ball.s
+        ball.s[3] = -ball.s[3]
+
+  def _detect_ball_collision(self):
     for i, first_ball in enumerate(self.balls):
       for second_ball in self.balls[i+1:]:
         distance = math.sqrt((first_ball.s[0]-second_ball.s[0])**2 + (first_ball.s[1]-second_ball.s[1])**2)
