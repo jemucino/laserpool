@@ -1,3 +1,5 @@
+% Transform from LIDAR to pool table coordinates
+
 function [xt,yt]=transformdata(x)
 
 rawdata=double(x.data{end});
@@ -8,10 +10,10 @@ r=rawdata(1:4:end)+rawdata(2:4:end)*2^8+rawdata(3:4:end)*2^16+rawdata(4:4:end)*2
 % y0=r.*sin(185/180*pi-theta);
 % plot(x0.*(y0<10000),y0.*(y0<10000),'o','MarkerSize',4)
 tableorientation=atan2(211,274.14); 
-%asin(36/59);%36.4º
-                             %Ro=1854.2;
-Ro=1888.8;
-To=pi/2+atan(-55/1888);
+Ro=1888.8;	% Distance to center of table in mm
+To=pi/2+atan(-55/R0);	% Rotation of LIDAR axes relative to pool table axes
+
+% Compute position of center of table in rotated LIDAR coordinates
 Xo=Ro*cos(pi-To-tableorientation);
 Yo=Ro*sin(pi-To-tableorientation);
 

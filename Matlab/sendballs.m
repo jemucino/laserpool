@@ -1,3 +1,5 @@
+% Send ball information to physics module
+% Depends on 'oscmsgout' from Pulsefield
 function sendballs(balls);
   ok=oscmsgout('PHYSICS','/begin_balls',{});
   for i=1:size(balls,1)
